@@ -196,6 +196,12 @@ class TableCalendar<T> extends StatefulWidget {
   /// Called when the calendar is created. Exposes its PageController.
   final void Function(PageController pageController)? onCalendarCreated;
 
+  /// Variable when date cannot be in the future
+  final bool canBeInFuture;
+
+  /// Variable when date cannot be in the past
+  final bool canBeInThePast;
+
   /// Creates a `TableCalendar` widget.
   TableCalendar({
     Key? key,
@@ -250,6 +256,8 @@ class TableCalendar<T> extends StatefulWidget {
     this.onPageChanged,
     this.onFormatChanged,
     this.onCalendarCreated,
+    this.canBeInFuture = true,
+    this.canBeInThePast = true,
   })  : assert(availableCalendarFormats.keys.contains(calendarFormat)),
         assert(availableCalendarFormats.length <= CalendarFormat.values.length),
         assert(weekendDays.isNotEmpty ? weekendDays.every((day) => day >= DateTime.monday && day <= DateTime.sunday) : true),
@@ -328,6 +336,32 @@ class _TableCalendarState<T> extends State<TableCalendar<T>> {
       }
 
       widget.onFormatChanged!(formats[id]);
+    }
+  }
+
+  /// Mario Ebner changed here: check if day is valid to change
+  void _checkDaySelected(DateTime day) {
+    //Holder with current DateTime
+    DateTime now = DateTime.now();
+
+    //every date is valid
+    if (widget.canBeInThePast && widget.canBeInFuture ) {
+      _onDayTapped(day);
+      return;
+    }
+    //only future is valid
+    if ( widget.canBeInFuture && !widget.canBeInThePast) {
+      if (day.isAfter(now) || day.startOfDay == now.startOfDay) {
+        _onDayTapped(day);
+        return;
+      }
+    }
+    // only past is valid
+    if (!widget.canBeInFuture && widget.canBeInThePast) {
+      if (day.isBefore(now) || day.startOfDay == now) {
+        _onDayTapped(day);
+        return;
+      }
     }
   }
 
@@ -575,7 +609,7 @@ class _TableCalendarState<T> extends State<TableCalendar<T>> {
               dayBuilder: (context, day, focusedMonth) {
                 return GestureDetector(
                   behavior: widget.dayHitTestBehavior,
-                  onTap: () => _onDayTapped(day),
+                  onTap: () => _checkDaySelected(day),
                   onLongPress: () => _onDayLongPressed(day),
                   child: _buildCell(day, focusedMonth),
                 );
