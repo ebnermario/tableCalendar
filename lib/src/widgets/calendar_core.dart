@@ -30,6 +30,8 @@ class CalendarCore extends StatelessWidget {
   final _OnCalendarPageChanged onPageChanged;
   final EdgeInsets calendarMargin;
   final EdgeInsets calendarPadding;
+  final bool canBeInPast;
+  final bool canBeInFuture;
 
   const CalendarCore({
     Key? key,
@@ -54,6 +56,8 @@ class CalendarCore extends StatelessWidget {
     this.scrollPhysics,
     this.calendarMargin = const EdgeInsets.all(0),
     this.calendarPadding = const EdgeInsets.all(0),
+    this.canBeInPast = true,
+    this.canBeInFuture = true,
   })  : assert(!dowVisible || (dowHeight != null && dowBuilder != null)),
         super(key: key);
 
@@ -106,6 +110,17 @@ class CalendarCore extends StatelessWidget {
           baseDay = _getBaseDay(calendarFormat, index);
         } else {
           baseDay = _getFocusedDay(calendarFormat, previousFocusedDay, index);
+        }
+
+        //check if it can be in future, when not change to prev
+        if (previousIndex != null && !canBeInFuture && baseDay.isAfter(DateTime.now())) {
+          pageController!.jumpToPage(previousIndex!);
+          return;
+        }
+        //check if it can be in past, when not change to prev
+        if (previousIndex != null && !canBeInPast && baseDay.isBefore(DateTime.now())) {
+          pageController!.jumpToPage(previousIndex!);
+          return;
         }
 
         return onPageChanged(index, baseDay);
